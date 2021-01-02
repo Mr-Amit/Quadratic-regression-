@@ -21,7 +21,7 @@ class XnY{
         x = X;
         y = Y;
     }
-    double get(int i){
+    double getv(int i){
         if(i == 0){
             return x;
         }
@@ -35,7 +35,7 @@ class Coeffs{
     // 1 for storing the value pairs
     // 1 for storing the calculations till then
     ArrayList<XnY> xny; 
-    int[][] arr; 
+    double[][] arr; 
     int uptill;
     WeightedObservedPoints obs;
     int prev;
@@ -47,14 +47,11 @@ class Coeffs{
         obs = new WeightedObservedPoints();
         prev = 0;
         xny =new ArrayList<XnY>();
-        arr = new int[5][5];
+        arr = new double[5][5];
         prev_coeff = new double[3];
     }
-    void dis(){
-        System.out.println(xny.toList());
-    }
     
-    public int[][] getCoeffs(double x, double y, double sensitivity, int sig_dig){
+    public double[][] getCoeffs(double x, double y, double sensitivity, int sig_dig){
         PolynomialCurveFitter fitter = PolynomialCurveFitter.create(2);
         obs.add(x,y);
         xny.add(new XnY(x, y));
@@ -66,7 +63,7 @@ class Coeffs{
         }
         else{
             obs.clear();
-            prev = xny.get(xny.size() -1).get(0);
+            prev = (xny.get(xny.size() -1)).getv(0);
             xny.clear();
             obs.add(x, y);
             xny.add(new XnY(x, y));
@@ -88,15 +85,15 @@ class Coeffs{
         double sum = 0;
 
         for(XnY ele: xny){
-            sum += ele.get(1);
+            sum += ele.getv(1);
         }
         return sum/xny.size();
     }
 
     void update(double[] coeffs){
         uptill = (uptill + 1)%5;
-        arr[uptill][0] = xny.get(0).get(0);
-        arr[uptill][1] = xny.get(xny.size() -1).get(0);
+        arr[uptill][0] = xny.get(0).getv(0);
+        arr[uptill][1] = xny.get(xny.size() -1).getv(0);
         arr[uptill][2] = coeffs[0];
         arr[uptill][3] = coeffs[1];
         arr[uptill][4] = coeffs[2];
@@ -112,10 +109,10 @@ class Coeffs{
         double[] predictedValues = new double[xny.size()];
         double residualSumOfSquares = 0;
         
-        for (int i=prev; i< pointList.size(); i++) {
-            predictedValues[i] = predict(coeffs, xny.get(i).get(0));
+        for (int i=prev; i< xny.size(); i++) {
+            predictedValues[i] = predict(coeffs, xny.get(i).getv(0));
 
-            double Val = xny.get(i).get(1);
+            double Val = xny.get(i).getv(1);
             double t = Math.pow((predictedValues[i] - Val), 2);
             residualSumOfSquares  += t;
             
@@ -123,7 +120,7 @@ class Coeffs{
         double avgActualValue = mean();
         double totalSumOfSquares = 0;
         for (int i=prev; i<xny.size(); i++) {
-            totalSumOfSquares += Math.pow( (predictedValues[i] - avgActualValues),2);
+            totalSumOfSquares += Math.pow( (predictedValues[i] - avgActualValue),2);
 
         }
         return 1.0 - (residualSumOfSquares/totalSumOfSquares);
