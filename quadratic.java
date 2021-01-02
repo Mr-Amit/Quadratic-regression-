@@ -67,7 +67,7 @@ class Coeffs{
             update(coeffs);
             return arr;
         }
-            
+        done = 1;    
     }
 
 
