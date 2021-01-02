@@ -90,13 +90,13 @@ class Coeffs{
         uptill = (uptill + 1)%5;
         arr[uptill][0] = xny.get(0).getv(0);
         arr[uptill][1] = xny.get(xny.size() -1).getv(0);
-        arr[uptill][2] = coeffs[0];
+        arr[uptill][2] = coeffs[2];
         arr[uptill][3] = coeffs[1];
-        arr[uptill][4] = coeffs[2];
+        arr[uptill][4] = coeffs[0];
     }
 
     double predict(double [] coeffs, double x){
-        return coeffs[0]*x*x + coeffs[1]*x + coeffs[2];
+        return coeffs[2]*x*x + coeffs[1]*x + coeffs[0];
     }
 
     double sensitivityCalc(double[] coeffs){
