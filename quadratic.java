@@ -1,3 +1,9 @@
+import java.util.ArrayList;
+import java.lang.Math;
+import org.apache.commons.math3.fitting.PolynomialCurveFitter;
+import org.apache.commons.math3.fitting.WeightedObservedPoints;
+
+
 class XnY{
     double x, y;
     XnY(double X, double Y){
