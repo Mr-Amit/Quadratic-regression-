@@ -121,12 +121,12 @@ class Coeffs{
             
         }
         double avgActualValue = mean();
-        double tsos = 0;
+        double totalSumOfSquares = 0;
         for (int i=prev; i<xny.size(); i++) {
-            tsos += Math.pow( (predictedValues[i] - avgActualValues),2);
+            totalSumOfSquares += Math.pow( (predictedValues[i] - avgActualValues),2);
 
         }
-        return 1.0 - (residualSumOfSquares/tsos);
+        return 1.0 - (residualSumOfSquares/totalSumOfSquares);
     }
     
 }
