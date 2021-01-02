@@ -8,7 +8,7 @@ import org.apache.commons.math4.fitting.WeightedObservedPoints;
 import java.util.*;
 import java.io.*; 
 
-public class what {
+public class MainClass {
     public static void main(String args[]) {
         Coeffs a = new Coeffs();
         
@@ -43,10 +43,6 @@ class Coeffs{
 
     Coeffs(){
 
-        // 
-        // xny.add(new XnY(1, 2));
-        // xny.add(new XnY(2, 10));
-        // xny.add(new XnY(3, 4));
         uptill = -1;
         obs = new WeightedObservedPoints();
         prev = 0;
@@ -114,7 +110,7 @@ class Coeffs{
 
 
         double[] predictedValues = new double[xny.size()];
-        double rsos = 0;
+        double residualSumOfSquares = 0;
         
         for (int i=prev; i< pointList.size(); i++) {
             predictedValues[i] = predict(coeffs, xny.get(i).get(0));
@@ -130,7 +126,7 @@ class Coeffs{
             tsos += Math.pow( (predictedValues[i] - avgActualValues),2);
 
         }
-        return 1.0 - (rsos/tsos);
+        return 1.0 - (residualSumOfSquares/tsos);
     }
     
 }
