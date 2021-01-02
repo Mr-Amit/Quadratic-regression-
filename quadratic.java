@@ -44,7 +44,7 @@ class Coeffs{
         if(done != 0){
             prev_coeff = fitter.fit(obs.toList());
         }
-        
+        done = 1;
         obs.add(x,y);
         done = 1;
         xny.add(new XnY(x, y));
@@ -67,7 +67,7 @@ class Coeffs{
             update(coeffs);
             return arr;
         }
-        done = 1;    
+            
     }
 
 
