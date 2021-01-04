@@ -8,10 +8,10 @@ import org.apache.commons.math3.fitting.PolynomialCurveFitter;
 import org.apache.commons.math3.fitting.WeightedObservedPoints;
 
 
-public class quadratic {
+public class App {
     public static void main(String args[]) throws Exception {
         Coeffs a = new Coeffs();
-        double[][] ans = new double[5][10];
+        double[][] ans = new double[10][8];
         double[] xvals = new double[1200];
         double[] yvals = new double[1200];
 
@@ -42,27 +42,54 @@ public class quadratic {
         w2f(xvals, wrt, 10);
         w2f(yvals, wrt, 10);
 
+
+        Scanner input = new Scanner (System.in);  
+        System.out.println("Enter the allowed max failed prediction : ");  
+        int maxFailedPred = input.nextInt();
+
+        System.out.println("Enter the the total tolerance: ");  
+        double tolerance = input.nextDouble();  
+        
+        System.out.print("Enter the round of digits: ");      
+        int sig_digs = input.nextInt();       
+
+        // The amount of data I want to take from the text file
         for(int i = 0; i < 300; i ++){
-            ans = a.getCoeffs(xvals[i], yvals[i], 2, 6, 2);                 //Function call to get Coefficients
+
+            
+//   getCoeffs(double x, double y, double tolerance, int maxFailedPred, int sig_dig){
+
+            ans = a.getCoeffs(xvals[i], yvals[i], tolerance, maxFailedPred, sig_digs);                 //Function call to get Coefficients
+        
+            
             print2D(ans,  wrt);
         }
 
         wrt.close();
 
     }
+
     static void print2D(double mat[][],  FileWriter wrt) throws Exception{ 
         wrt.write("\n");
-
+        int flag = 0;
         for (int i = 0; i < mat.length; i++){
   
             System.out.print("[");
-            for (int j = 0; j < 5; j++) 
+            for (int j = 0; j < 8; j++){ 
                 if(mat[i][0] != 0 || mat[i][1] !=0)
-                    if(j < 4)
+                    if(j < 7)
                         System.out.print(mat[i][j] + ", "); 
                     else
                         System.out.print(mat[i][j]); 
+                else{
+                    flag = 1;
+                }
+            }
+
             System.out.println("]");
+            if (flag == 1){
+                break;
+            }
             w2f(mat[i], wrt, 5);
             
         }
@@ -111,7 +138,7 @@ class Coeffs{
         prev = 0;
         done = 0;
         xny =new ArrayList<XnY>();
-        arr = new double[10][5];                
+        arr = new double[10][8];                
         prev_coeff = new double[3];
         
     }
@@ -119,7 +146,7 @@ class Coeffs{
 
 
     // The Required Function
-    public double[][] getCoeffs(double x, double y, double tolerance, int minFailedPred, int sig_dig){
+    public double[][] getCoeffs(double x, double y, double tolerance, int maxFailedPred, int sig_dig){
         PolynomialCurveFitter fitter = PolynomialCurveFitter.create(2);
         if(done != 0){
             prev_coeff = fitter.fit(obs.toList());
@@ -150,7 +177,7 @@ class Coeffs{
         }
         else{  
             int FailedPred = FailiureCalc(coeffs, tolerance);
-            if(minFailedPred > FailedPred){
+            if(maxFailedPred > FailedPred){
                 if(coeffs[2] > 0 && xny.size() > 2){    //Virtual point 
                     double xprev = x; 
                     double avgDist = (x- xny.get(xny.size() - 2).getv(0))/2;
@@ -167,6 +194,18 @@ class Coeffs{
                 return arr;
             }
             else{
+                if(prev_coeff[2] > 0 && xny.size() > 2){
+                    double xprev = xny.get(xny.size() - 2).getv(0); 
+                    double avgDist = (xprev - xny.get(xny.size() - 4).getv(0))/2;
+                    double yprev = y; 
+                    double x_ = xprev + avgDist;
+                    double y_ = yprev/2;
+                    x_ = Math.round (x_ * 10000.0) / 10000.0;
+                    y_ = Math.round (y_ * 10000.0) / 10000.0;
+                    obs.add(x_, y_);
+                    xny.add(new XnY(x_, y_));
+                }
+
                 update(prev_coeff, sig_dig);
                 uptill += 1;
                 obs.clear();
@@ -177,16 +216,35 @@ class Coeffs{
             }
         }
     }
+    int whereIsThePointInTheParabola(double x, double yCalculated, double a, double b, double c){
+        double h=-1*b / (2*a);
+        if (x<h) 
+            return -1;
+        if (x==h)
+            return 0;
+        return 1;
+        }
 
+    double slope(double x, double a, double b){
+            return 2*a*x+b;
+        }
 
     void update(double[] coeffs, int sig_dig){
         uptill = (uptill)%10;
-        arr[uptill][0] = xny.get(0).getv(0);
+        double x = xny.get(0).getv(0);
+        arr[uptill][0] = x;
+        x = xny.get(xny.size() -1).getv(0);
         System.out.println("The size : " + xny.size());                             // print length
         arr[uptill][1] = xny.get(xny.size() -1).getv(0);
-        arr[uptill][2] = Math.round(coeffs[2]*Math.pow(10,sig_dig))/Math.pow(10,sig_dig);
-        arr[uptill][3] = Math.round(coeffs[1]*Math.pow(10,sig_dig))/Math.pow(10,sig_dig);
-        arr[uptill][4] = Math.round(coeffs[0]*Math.pow(10,sig_dig))/Math.pow(10,sig_dig);
+        arr[uptill][2] = RoundOf(coeffs[2], sig_dig);
+        arr[uptill][3] = RoundOf(coeffs[1], sig_dig);
+        arr[uptill][4] = RoundOf(coeffs[0], sig_dig);
+
+        double y = coeffs[2]*x*x + coeffs[1]*x + coeffs[0];
+        
+        arr[uptill][5] = RoundOf(y, sig_dig); 
+        arr[uptill][6] = RoundOf(whereIsThePointInTheParabola(x, y, arr[uptill][2], arr[uptill][3], arr[uptill][4]), sig_dig);
+        arr[uptill][7] = RoundOf(slope(x, arr[uptill][2], arr[uptill][3]), sig_dig);
     }
 
     double predict(double [] coeffs, double x){
@@ -202,11 +260,18 @@ class Coeffs{
             
             calcY = predict(coeffs, xny.get(i).getv(0));
             double Val = xny.get(i).getv(1);
-            if(Val > calcY + tolerance){
+
+            ////////////////////////////////                 LOOK HERE           \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+            // The condition is like this because am allowing more points to under the graph then above it
+            if(Val > calcY + tolerance || Val < calcY - 3*tolerance){
                 FailedPred += 1;
             }
         }
         return FailedPred;
+    }
+
+    double RoundOf(double num, int sig_dig){
+        return Math.round(num*Math.pow(10,sig_dig))/Math.pow(10,sig_dig);
     }
     
 }
