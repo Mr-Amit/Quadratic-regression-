@@ -19,18 +19,18 @@ public class App {
         try {
      
             // Put the input.txt in the desired location 
-            File myObj = new File("C:\\Users\\lenovo\\Downloads\\input.txt");
+            File fileObj = new File("C:\\Users\\lenovo\\Downloads\\input.txt");
             // This input file contains all the data value pairs from the Data.csv file
-            Scanner myReader = new Scanner(myObj);
+            Scanner fileReader = new Scanner(fileObj);
             int i = 0;
-            while (myReader.hasNextLine()) {
-                String str = myReader.nextLine();
-                String[] strs = str.split("\t");
-                xvals[i] = Double.parseDouble(strs[0]);
-                yvals[i] = Double.parseDouble(strs[1]);
+            while (fileReader.hasNextLine()) {
+                String dataCollected = fileReader.nextLine();
+                String[] dataArr = dataCollected.split("\t");
+                xvals[i] = Double.parseDouble(dataArr[0]);
+                yvals[i] = Double.parseDouble(dataArr[1]);
                 i += 1;
             }
-            myReader.close();
+            fileReader.close();
             } catch (FileNotFoundException e) {
             System.out.println("An error occurred.");
             e.printStackTrace();
@@ -45,19 +45,23 @@ public class App {
         double tolerance = input.nextDouble();  
         
         System.out.print("Enter the round of digits: ");      
-        int sig_digs = input.nextInt();       
+        int significantDigits = input.nextInt();       
 
         // The amount of data I want to take from the text file
         for(int i = 0; i < 300; i ++){
 
             
-//   getCoeffs(double x, double y, double tolerance, int maxFailedPred, int sig_dig){
+//   getCoeffs(double x, double y, double tolerance, int maxFailedPred, int significantDigits){
 
-            ans = a.getCoeffs(xvals[i], yvals[i], tolerance, maxFailedPred, sig_digs);                 //Function call to get Coefficients
+            ans = a.getCoeffs(xvals[i], yvals[i], tolerance, maxFailedPred, significantDigits);                 //Function call to get Coefficients
             print2D(ans);
         }
+        // To write the values that are not written till now
+        if(a.xny.size() != 0){
+            a.writeXnCalYtoFile(a.xny);
+        }
     }
-
+    // Function to prind the 2-Dimensional Matrix
     static void print2D(double mat[][]) throws Exception{ 
         int flag = 0;
         for (int i = 0; i < mat.length; i++){
@@ -70,12 +74,13 @@ public class App {
                     else
                         System.out.print(mat[i][j]); 
                 else{
+                    //To remember it has reached the end 
                     flag = 1;
                 }
             }
 
             System.out.println("]");
-            if (flag == 1){
+            if (flag == 1){     // break when the end is reached
                 break;
             }
             
@@ -85,14 +90,17 @@ public class App {
 
 }
 
+// To store every x and y value pairs in the same object
 
 class XnY{
     double x, y;
+    double yCalc;
     XnY(double X, double Y){
         x = X;
         y = Y;
     }
-    double getv(int i){
+    double getValue(int i){
+        // return x for 0 and y for 1
         if(i == 0){
             return x;
         }
@@ -100,48 +108,61 @@ class XnY{
             return y;
         }
     }
+    void setValue(double yCalc){
+        this.yCalc = yCalc;
+    }
+    double getValue(){
+        return yCalc;
+    }
 }
 
 class Coeffs{
 
     ArrayList<XnY> xny; 
     double[][] arr; 
-    int uptill;
+
+    // rowPointer is a Pointer to the current Row in the 2 dimensional matrix
+    int rowPointer;
     WeightedObservedPoints obs;
     int prev;
-    double[] prev_coeff;
-    int done;
+    double[] prevCoeffs;
+
+    // isObsNotEmpty is used as a flag to see if it is used ever
+    int isObsNotEmpty;
+
+    // Constructor
     Coeffs(){
-        uptill = 0;
+        rowPointer = 0;
         obs = new WeightedObservedPoints();
         prev = 0;
-        done = 0;
+        isObsNotEmpty = 0;
         xny =new ArrayList<XnY>();
         arr = new double[10][8];                
-        prev_coeff = new double[3];
+        prevCoeffs = new double[3];
         
     }
     
 
 
     // The Required Function
-    public double[][] getCoeffs(double x, double y, double tolerance, int maxFailedPred, int sig_dig){
+    public double[][] getCoeffs(double x, double y, double tolerance, int maxFailedPred, int significantDigits){
+        //fitter is the default curve fitter
         PolynomialCurveFitter fitter = PolynomialCurveFitter.create(2);
-        if(done != 0){
-            prev_coeff = fitter.fit(obs.toList());
+        if(isObsNotEmpty != 0){
+            prevCoeffs = fitter.fit(obs.toList());
         }
-        done = 1;
+        isObsNotEmpty = 1;
         x = Math.round (x * 10000.0) / 10000.0;
         y = Math.round (y * 10000.0) / 10000.0;
         obs.add(x,y);
-        done = 1;
+        isObsNotEmpty = 1;
         xny.add(new XnY(x, y));
         double[] coeffs = fitter.fit(obs.toList()); 
         if(xny.size() < 6){
             // My implementation of your virtual point
             if(coeffs[2] > 0 && xny.size() > 2){
                 double xprev = x; 
-                double avgDist = (x- xny.get(xny.size() - 2).getv(0))/2;
+                double avgDist = (x- xny.get(xny.size() - 2).getValue(0))/2;
                 double yprev = y; 
                 x = xprev + avgDist;
                 y = yprev/2;
@@ -151,15 +172,17 @@ class Coeffs{
                 xny.add(new XnY(x, y));
             }
             coeffs = fitter.fit(obs.toList());
-            update(coeffs, sig_dig);
+            updateRow(coeffs, significantDigits);
             return arr;
         }
         else{  
+            // Here is what you prescribed for tolerance but that was giving way off the top values
+            // tolerance = Math.abs(1/(40 * coeffs[2]))
             int FailedPred = FailiureCalc(coeffs, tolerance);
             if(maxFailedPred > FailedPred){
                 if(coeffs[2] > 0 && xny.size() > 2){    //Virtual point 
                     double xprev = x; 
-                    double avgDist = (x- xny.get(xny.size() - 2).getv(0))/2;
+                    double avgDist = (x- xny.get(xny.size() - 2).getValue(0))/2;
                     double yprev = y; 
                     x = xprev + avgDist;
                     y = yprev/2;
@@ -169,13 +192,13 @@ class Coeffs{
                     xny.add(new XnY(x, y));
                 }
                 coeffs = fitter.fit(obs.toList());
-                update(coeffs, sig_dig);
+                updateRow(coeffs, significantDigits);
                 return arr;
             }
             else{
-                if(prev_coeff[2] > 0 && xny.size() > 2){
-                    double xprev = xny.get(xny.size() - 2).getv(0); 
-                    double avgDist = (xprev - xny.get(xny.size() - 4).getv(0))/2;
+                if(prevCoeffs[2] > 0 && xny.size() > 2){
+                    double xprev = xny.get(xny.size() - 2).getValue(0); 
+                    double avgDist = (xprev - xny.get(xny.size() - 4).getValue(0))/2;
                     double yprev = y; 
                     double x_ = xprev + avgDist;
                     double y_ = yprev/2;
@@ -185,9 +208,10 @@ class Coeffs{
                     xny.add(new XnY(x_, y_));
                 }
 
-                update(prev_coeff, sig_dig);
-                uptill += 1;
+                updateRow(prevCoeffs, significantDigits);
+                rowPointer += 1;
                 obs.clear();
+                writeXnCalYtoFile(xny);
                 xny.clear();
                 obs.add(x, y);
                 xny.add(new XnY(x, y));
@@ -208,25 +232,26 @@ class Coeffs{
             return 2*a*x+b;
         }
 
-    void update(double[] coeffs, int sig_dig){
-        uptill = (uptill)%10;
-        double x = xny.get(0).getv(0);
-        arr[uptill][0] = x;
-        x = xny.get(xny.size() -1).getv(0);
-        System.out.println("The size : " + xny.size());                             // print length
-        arr[uptill][1] = xny.get(xny.size() -1).getv(0);
-        arr[uptill][2] = RoundOf(coeffs[2], sig_dig);
-        arr[uptill][3] = RoundOf(coeffs[1], sig_dig);
-        arr[uptill][4] = RoundOf(coeffs[0], sig_dig);
+    void updateRow(double[] coeffs, int significantDigits){
+        rowPointer = (rowPointer)%10;
+        double x = xny.get(0).getValue(0);
+        arr[rowPointer][0] = x;
+        x = xny.get(xny.size() -1).getValue(0);
+        System.out.println("The size : " + xny.size());                             // Prints the number of points used
+        arr[rowPointer][1] = xny.get(xny.size() -1).getValue(0);
+        arr[rowPointer][2] = RoundOf(coeffs[2], significantDigits);
+        arr[rowPointer][3] = RoundOf(coeffs[1], significantDigits);
+        arr[rowPointer][4] = RoundOf(coeffs[0], significantDigits);
 
         double y = coeffs[2]*x*x + coeffs[1]*x + coeffs[0];
         
-        arr[uptill][5] = RoundOf(y, sig_dig); 
-        arr[uptill][6] = RoundOf(whereIsThePointInTheParabola(x, y, arr[uptill][2], arr[uptill][3], arr[uptill][4]), sig_dig);
-        arr[uptill][7] = RoundOf(slope(x, arr[uptill][2], arr[uptill][3]), sig_dig);
+        arr[rowPointer][5] = RoundOf(y, significantDigits); 
+        arr[rowPointer][6] = RoundOf(whereIsThePointInTheParabola(x, y, arr[rowPointer][2], arr[rowPointer][3], arr[rowPointer][4]), significantDigits);
+        arr[rowPointer][7] = RoundOf(slope(x, arr[rowPointer][2], arr[rowPointer][3]), significantDigits);
+        updateXnYcalc(xny, coeffs);
     }
 
-    double predict(double [] coeffs, double x){
+    double predictY(double [] coeffs, double x){
         return coeffs[2]*x*x + coeffs[1]*x + coeffs[1];
     }
 
@@ -237,20 +262,49 @@ class Coeffs{
         
         for (int i=0; i< xny.size(); i++) {
             
-            calcY = predict(coeffs, xny.get(i).getv(0));
-            double Val = xny.get(i).getv(1);
+            calcY = predictY(coeffs, xny.get(i).getValue(0));
+            double actualValue = xny.get(i).getValue(1);
 
             ////////////////////////////////                 LOOK HERE           \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
             // The condition is like this because am allowing more points to under the graph then above it
-            if(Val > calcY + tolerance || Val < calcY - 3*tolerance){
+            if(actualValue > calcY + tolerance || actualValue < calcY - 3*tolerance){
                 FailedPred += 1;
             }
         }
         return FailedPred;
     }
 
-    double RoundOf(double num, int sig_dig){
-        return Math.round(num*Math.pow(10,sig_dig))/Math.pow(10,sig_dig);
+    double RoundOf(double num, int significantDigits){
+        return Math.round(num*Math.pow(10,significantDigits))/Math.pow(10,significantDigits);
     }
-    
+
+    void updateXnYcalc(ArrayList<XnY> xny, double[] coeffs){
+        double yCalc;
+        double x;
+        for(int i=0; i < xny.size(); i++){
+            x = xny.get(i).getValue(0);
+            yCalc = coeffs[2]*x*x + coeffs[1]*x + coeffs[0];
+            xny.get(i).setValue(yCalc);
+        }
+
+    }
+    void writeXnCalYtoFile(ArrayList<XnY> xny){
+        try{    
+            FileWriter fw=new FileWriter("D:\\testout.txt", true);  
+            BufferedWriter bw = new BufferedWriter(fw);
+            PrintWriter out = new PrintWriter(bw);  
+            double yCalc;
+            double x;
+            for(int i=0; i < xny.size(); i++){
+                x = xny.get(i).getValue(0);
+                yCalc = xny.get(i).yCalc;
+                out.write(x + " " + yCalc + "\n");   
+            } 
+
+        out.close();
+        bw.close();
+        fw.close();    
+        }
+        catch(Exception e){System.out.println(e);}    
+    }   
 }
