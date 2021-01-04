@@ -8,7 +8,7 @@ import org.apache.commons.math3.fitting.PolynomialCurveFitter;
 import org.apache.commons.math3.fitting.WeightedObservedPoints;
 
 
-public class App {
+public class quadratic {
     public static void main(String args[]) throws Exception {
         Coeffs a = new Coeffs();
         double[][] ans = new double[10][8];
