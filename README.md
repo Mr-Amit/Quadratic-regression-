@@ -1,1 +1,1 @@
-# Quadratic-regression-
+# Quadratic-Regression
