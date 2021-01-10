@@ -14,12 +14,21 @@ public class App {
         double[][] ans = new double[10][8];
         double[] xvals = new double[1200];
         double[] yvals = new double[1200];
-
-
+        String file_Name = "";
+        File file;
         try {
      
             // Put the input.txt in the desired location 
             File fileObj = new File("C:\\Users\\lenovo\\Downloads\\input.txt");
+            for(int i = 0; i <= 7; i ++){
+                file_Name = "C:\\Users\\lenovo\\Downloads\\programFiles\\OutputFile_" + i + ".txt";
+                file = new File(file_Name); 
+                
+                file.delete();          //Doesnt seems to work, have to delete the files manually
+                
+            }
+            //You dont need to do anything here I made it for python
+          
             // This input file contains all the data value pairs from the Data.csv file
             Scanner fileReader = new Scanner(fileObj);
             int i = 0;
@@ -63,29 +72,29 @@ public class App {
     }
     // Function to prind the 2-Dimensional Matrix
     static void print2D(double mat[][]) throws Exception{ 
-        int flag = 0;
-        for (int i = 0; i < mat.length; i++){
+        // int flag = 0;
+        // for (int i = 0; i < mat.length; i++){
   
-            System.out.print("[");
-            for (int j = 0; j < 8; j++){ 
-                if(mat[i][0] != 0 || mat[i][1] !=0)
-                    if(j < 7)
-                        System.out.print(mat[i][j] + ", "); 
-                    else
-                        System.out.print(mat[i][j]); 
-                else{
-                    //To remember it has reached the end 
-                    flag = 1;
-                }
-            }
+        //     System.out.print("[");
+        //     for (int j = 0; j < 8; j++){ 
+        //         if(mat[i][0] != 0 || mat[i][1] !=0)
+        //             if(j < 7)
+        //                 System.out.print(mat[i][j] + ", "); 
+        //             else
+        //                 System.out.print(mat[i][j]); 
+        //         else{
+        //             //To remember it has reached the end 
+        //             flag = 1;
+        //         }
+        //     }
 
-            System.out.println("]");
-            if (flag == 1){     // break when the end is reached
-                break;
-            }
+        //     System.out.println("]");
+        //     if (flag == 1){     // break when the end is reached
+        //         break;
+        //     }
             
-        }
-        System.out.println("\n");
+        // }
+        // System.out.println("\n");
     }
 
 }
@@ -95,9 +104,13 @@ public class App {
 class XnY{
     double x, y;
     double yCalc;
+    double x1, x2, a, b, c, slope;
+    int paraboleSide;
+    double[] allValues;
     XnY(double X, double Y){
         x = X;
         y = Y;
+        allValues = new double[8];
     }
     double getValue(int i){
         // return x for 0 and y for 1
@@ -108,8 +121,26 @@ class XnY{
             return y;
         }
     }
-    void setValue(double yCalc){
-        this.yCalc = yCalc;
+    void setValue(double x_1, double x_2, double[] coeffs, int parabole_Side, double Slope){
+        x1 = x_1;
+        x2 = x_2;
+        a = coeffs[2];
+        b = coeffs[1];
+        c = coeffs[0];
+        yCalc = a*x*x + b*x + c;
+        slope = Slope;
+        paraboleSide = parabole_Side;
+
+        allValues[0] = x1;
+        allValues[1] = x2;
+        allValues[2] = a;
+        allValues[3] = b;
+        allValues[4] = c;
+        allValues[5] = slope;
+        allValues[6] = parabole_Side;
+        allValues[7] = yCalc;
+
+
     }
     double getValue(){
         return yCalc;
@@ -237,7 +268,7 @@ class Coeffs{
         double x = xny.get(0).getValue(0);
         arr[rowPointer][0] = x;
         x = xny.get(xny.size() -1).getValue(0);
-        System.out.println("The size : " + xny.size());                             // Prints the number of points used
+        //System.out.println("The size : " + xny.size());                             // Prints the number of points used
         arr[rowPointer][1] = xny.get(xny.size() -1).getValue(0);
         arr[rowPointer][2] = RoundOf(coeffs[2], significantDigits);
         arr[rowPointer][3] = RoundOf(coeffs[1], significantDigits);
@@ -279,32 +310,64 @@ class Coeffs{
     }
 
     void updateXnYcalc(ArrayList<XnY> xny, double[] coeffs){
-        double yCalc;
-        double x;
+        double x, y;
+        double x1, x2;
         for(int i=0; i < xny.size(); i++){
-            x = xny.get(i).getValue(0);
-            yCalc = coeffs[2]*x*x + coeffs[1]*x + coeffs[0];
-            xny.get(i).setValue(yCalc);
+            x1 = xny.get(0).getValue(0);
+            x2 = xny.get(xny.size() -1).getValue(0);
+            x = xny.get(0).getValue(0);
+            y = xny.get(0).getValue(1);
+            double slope = slope(x, coeffs[2], coeffs[1]);
+            int paraboleSide = whereIsThePointInTheParabola(x, y, coeffs[2], coeffs[1], coeffs[0]);
+            xny.get(i).setValue(x1, x2, coeffs, paraboleSide, slope);
+
         }
 
     }
+    
+    // void writeXnCalYtoFile(ArrayList<XnY> xny){
+    //     try{    
+    //         FileWriter fw=new FileWriter("C:\\Users\\lenovo\\Downloads\\OutputFile_8", true);  
+    //         BufferedWriter bw = new BufferedWriter(fw);
+    //         PrintWriter out = new PrintWriter(bw);  
+    //         double yCalc;
+    //         double x;
+    //         for(int i=0; i < xny.size(); i++){
+    //             x = xny.get(i).getValue(0);
+    //             yCalc = xny.get(i).yCalc;
+    //             out.write(x + " " + yCalc + "\n");   
+    //         } 
+
+    //     out.close();
+    //     bw.close();
+    //     fw.close();    
+    //     }
+    //     catch(Exception e){System.out.println(e);}    
+    // }   
     void writeXnCalYtoFile(ArrayList<XnY> xny){
         try{    
-            FileWriter fw=new FileWriter("D:\\testout.txt", true);  
-            BufferedWriter bw = new BufferedWriter(fw);
-            PrintWriter out = new PrintWriter(bw);  
-            double yCalc;
-            double x;
-            for(int i=0; i < xny.size(); i++){
-                x = xny.get(i).getValue(0);
-                yCalc = xny.get(i).yCalc;
-                out.write(x + " " + yCalc + "\n");   
-            } 
+            String file_Name = "";
+            FileWriter[] fw = new FileWriter[8];
+            BufferedWriter[] bw = new BufferedWriter[8];
+            PrintWriter[] out = new PrintWriter[8];
+            for(int i = 0; i <= 7; i ++){
+                file_Name = "C:\\Users\\lenovo\\Downloads\\programFiles\\OutputFile_" + i + ".txt";
+                fw[i] = new FileWriter(file_Name, true);
 
-        out.close();
-        bw.close();
-        fw.close();    
+                bw[i] = new BufferedWriter(fw[i]);
+                out[i] = new PrintWriter(bw[i]);  
+                double x;
+                for(int j=0; j < xny.size(); j++){
+                    x = xny.get(j).getValue(0);
+                    
+                    out[i].write(x + " " + xny.get(j).allValues[i] + "\n");   
+                } 
+
+                out[i].close();
+                bw[i].close();
+                fw[i].close();    
+            }
         }
         catch(Exception e){System.out.println(e);}    
-    }   
+    }
 }
