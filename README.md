@@ -1,5 +1,10 @@
 # Quadratic-Regression
 
-This is a Java Project which gets live feed of the bitcoin status and returns live co-ordinates to a Parabolic Graph.
+## This is a Java Project which gets live feed of the bitcoin status and returns live co-ordinates of a approximated negative Parabolic Graph.
 
-For preview go to [link](https://raw.githubusercontent.com/Mr-Amit/Quadratic-regression-/main/inverted%20parabola.jpg)
+SnapShot of its working:
+
+![](https://i.imgur.com/VrmfkkS.jpg)
+
+## Go to [link](https://codepen.io/jechaviz/pen/QWKmYQL) to try with your own inputs.
+
